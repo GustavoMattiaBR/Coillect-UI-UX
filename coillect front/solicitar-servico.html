@@ -1,0 +1,128 @@
+<!DOCTYPE html>
+<html lang="pt-br">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+     <link rel="stylesheet" href="styles.css">
+    <title>Solicitação de Serviço</title>
+    <style>
+        .btn {
+            width: 150px;
+            height: 35px;
+            background-color: #28a745;
+            color: white;
+            border: none;
+            border-radius: 5px;
+            cursor: pointer;
+        }
+        .btn:hover {
+            background-color: #218838;
+        }
+        .btn-secondary {
+            background-color: #007bff;
+        }
+        .btn-secondary:hover {
+            background-color: #0056b3;
+        }
+        .btn-danger {
+            background-color: #dc3545;
+        }
+        .btn-danger:hover {
+            background-color: #c82333;
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <header class="app-header">
+            <div class="logo">
+                <div class="logo-icon"><img src="Group 3.png" style="height: 80px;" alt=""></div>
+                
+            </div>
+        </header>
+        <main class="form-container">
+        <h1>Minha conta</h1>
+        <div>
+            <button class="btn btn-secondary" onclick="window.location.href='alterarSenha.html'">
+                Alterar Senha
+            </button>
+            <button class="btn btn-danger" onclick="window.location.href='deletarConta.html'">
+                Deletar Conta
+            </button>
+        </div>
+        <div id="empresas"></div>
+        </main>
+    </div>
+
+    <script>
+        const BASE_URL = "http://localhost:8080/api";
+
+        async function listarEmpresas() {
+            try {
+                const response = await fetch(`${BASE_URL}/empresas/listar`, {
+                    method: "GET",
+                    headers: {
+                        "Content-Type": "application/json",
+                        "Authorization": `Bearer ${localStorage.getItem("authToken")}`
+                    }
+                });
+
+                if (!response.ok) {
+                    throw new Error("Erro ao buscar empresas.");
+                }
+
+                const empresas = await response.json();
+                const container = document.getElementById("empresas");
+
+                empresas.forEach(empresa => {
+                    const div = document.createElement("div");
+                    div.className = "empresa";
+
+                    div.innerHTML = `
+                        <span>${empresa.nomeCorporativo}</span>
+                        <button class="btn" onclick="solicitarServico('${empresa.cnpj}', ${empresa.idServico})">
+                            Solicitar Serviço
+                        </button>
+                    `;
+
+                    container.appendChild(div);
+                });
+            } catch (error) {
+                console.error(error);
+                alert("Erro ao carregar empresas.");
+            }
+        }
+
+        async function solicitarServico(cnpjEmpresa, idServico) {
+            try {
+                const cpfUsuario = localStorage.getItem("cpf");
+                if (!cpfUsuario) {
+                    alert("Usuário não autenticado corretamente.");
+                    return;
+                }
+
+                const response = await fetch(`${BASE_URL}/servicos/solicitar`, {
+                    method: "POST",
+                    headers: {
+                        "Content-Type": "application/json",
+                        "Authorization": `Bearer ${localStorage.getItem("authToken")}`
+                    },
+                    body: JSON.stringify({ cpfUsuario, cnpjEmpresa, idServico })
+                });
+
+                if (!response.ok) {
+                    throw new Error(await response.text());
+                }
+
+                alert("Serviço solicitado com sucesso!");
+            } catch (error) {
+                console.error(error);
+                alert("Erro ao solicitar serviço: " + error.message);
+            }
+        }
+
+        // Carrega as empresas ao iniciar a página
+        listarEmpresas();
+    </script>
+</body>
+</html>
